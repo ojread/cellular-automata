@@ -1,0 +1,147 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+
+<head>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+
+<style type="text/css">
+body {
+	font-family: sans-serif;
+}
+
+span.ruleNum {
+	color: blue;
+	cursor: pointer;
+}
+</style>
+
+<title>Cellular automata with HTML5's canvas</title>
+<meta name="description" content="Generate cellular automata in your browser.">
+
+</head>
+
+<body onload="ca();">
+
+
+<form id="form">
+	<p>
+		Width: <input name="width" id="width" value="800" />
+		Height: <input name="height" id="height" value="400" />
+	</p>
+	<p>Enter a rule number between 0 and 255 or try  
+		<span class="ruleNum">30</span>, 
+		<span class="ruleNum">54</span>, 
+		<span class="ruleNum">60</span>, 
+		<span class="ruleNum">62</span>, 
+		<span class="ruleNum">90</span>, 
+		<span class="ruleNum">94</span>, 
+		<span class="ruleNum">102</span>, 
+		<span class="ruleNum">110</span>, 
+		<span class="ruleNum">122</span>, 
+		<span class="ruleNum">126</span>, 
+		<span class="ruleNum">150</span>, 
+		<span class="ruleNum">158</span>, 
+		<span class="ruleNum">182</span>, 
+		<span class="ruleNum">190</span>, 
+		<span class="ruleNum">222</span>, 
+		<span class="ruleNum">250</span>.
+	</p>
+	<p>
+		Rule: <input name="rule" id="rule" value="30" />
+		<input type="submit" value="Draw" />
+	</p>
+</form>
+
+<canvas id="canvas" width="800" height="400"></canvas>
+
+<div id="debug"></div>
+
+<script>
+
+$(".ruleNum").click( function() {
+	setRule( $(this).html() )
+});
+
+function setRule(num) {
+	$("#rule").val( num );
+	ca();
+}
+
+$("#form").submit( function() {
+	ca();
+	return false; // Don't submit
+});
+
+function ca() {
+	var canvas = document.getElementById("canvas");
+	var context = canvas.getContext("2d");
+	
+	var width = $('#width').val();
+	var height = $('#height').val();
+	
+	$("#canvas").attr("width", width);
+	$("#canvas").attr("height", height);
+	
+	context.clearRect(0, 0, width, height) // Clear canvas
+
+	var previousLine = new Array();
+	var currentLine = new Array();
+	
+	var rule = $("#rule").val();
+	rule = parseInt(rule).toString(2); // Convert to binary
+	
+	// Add leading zeros
+	while (rule.length < 8) {
+		rule = '0' + rule;
+	}
+	//document.getElementById('debug').innerHTML += 'Rule: ' + rule + '<br/>';
+	
+	// Now we can look at the 3 cells above a given cell, use their states as bits to specify the position in the binary rule.
+	// Very elagant!
+	// So 101 = 5 so look at the 5th bit from the right in the rule.
+	
+	var ruleBit;
+	
+	// Initialise arrays
+	for (x=0; x<width; x++) {
+		previousLine[x] = 0;
+		currentLine[x] = 0;
+	}
+		
+	for (y=0; y<height; y++) {
+		if (y == 0) {
+			// Draw the initial point on the first line
+			currentLine[width/2] = 1;
+			context.fillRect(width/2, 0, 1, 1);
+		} else {
+			previousLine = currentLine.slice(); // Copy the previous line
+			
+			for (x=0; x<width; x++) {
+				ruleBit = 0;
+				// Check the state of the 3 cells above to determine the rule bit that determines this cell's state.
+				if (x > 0) if (previousLine[x-1] == 1) ruleBit += 4;
+				if (previousLine[x] == 1) ruleBit += 2;
+				if (x < width) if (previousLine[x+1] == 1) ruleBit += 1;
+				
+				/*if (ruleBit>0) document.getElementById('debug').innerHTML +=
+					'ruleBit=' + ruleBit +
+					' output=' + rule.charAt(7 - ruleBit) + '<br/>';
+				*/
+				if (rule.charAt(7 - ruleBit) == '1') {
+					context.fillRect(x, y, 1, 1);
+					currentLine[x] = 1;
+				} else {
+					currentLine[x] = 0;
+				}
+			}
+		}
+	}
+	
+	// Draw everything at once
+	context.strokeStyle = "#000";
+	context.stroke();
+}
+
+</script>
+</body>
+</html>		
